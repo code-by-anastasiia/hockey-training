@@ -5,7 +5,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/fireba
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyC7CLKiHc2IUccBS6CVRfcUISNxLNBGFq8",        // <- твои данные
+    apiKey: "AIzaSyC7CLKiHc2IUccBS6CVRfcUISNxLNBGFq8",
     authDomain: "hockey-training-b1458.firebaseapp.com",
     projectId: "hockey-training-b1458",
     storageBucket: "hockey-training-b1458.firebasestorage.app",
@@ -53,12 +53,42 @@ function spielerAnzeigen(spieler) {
                 <button class="nein-btn ${s.antwort === 'nein' ? 'aktiv' : ''}"
                         onclick="antwortSetzen(${index}, 'nein')">Nein</button>
                 <button onclick="spielerLoeschen(${index})"
-                        style="background:#999; margin-left:10px;">Spieler löschen</button>
+                        style="background:none; border:none; color:#1a3a6b; cursor:pointer; font-size:18px; margin-left:10px;">🗑️</button>
             </td>
         `;
         spielerListe.appendChild(zeile);
     });
 }
+
+function antwortSetzen(index, antwort) {
+    const text = antwort === 'ja' ? 'Anwesenheit mit Ja bestätigen?' : 'Abwesenheit mit Nein bestätigen?';
+    ausstehende_aktion = async function() {
+        const daten = await getDaten();
+        daten.spieler[index].antwort = antwort;
+        await saveDaten(daten);
+
+        const bestaetigung = document.getElementById('antwort-bestaetigung');
+        bestaetigung.style.opacity = '1';
+        setTimeout(function() { bestaetigung.style.opacity = '0'; }, 2000);
+    };
+    document.getElementById('modal-bestaetigung-text').textContent = text;
+    document.getElementById('modal-bestaetigung').style.display = 'block';
+}
+
+function spielerLoeschen(index) {
+    getDaten().then(function(daten) {
+        ausstehende_aktion = async function() {
+            daten.spieler.splice(index, 1);
+            await saveDaten(daten);
+        };
+        document.getElementById('modal-bestaetigung-text').textContent = daten.spieler[index].name + ' wirklich löschen?';
+        document.getElementById('modal-bestaetigung').style.display = 'block';
+    });
+}
+
+// Делаем функции глобальными для onclick в HTML
+window.antwortSetzen = antwortSetzen;
+window.spielerLoeschen = spielerLoeschen;
 
 // ============================================
 // ЧАСТЬ 2: Слушаем изменения в реальном времени
@@ -67,7 +97,6 @@ onSnapshot(doc(db, 'training', 'daten'), function(snap) {
     if (!snap.exists()) return;
     const daten = snap.data();
 
-    // Обновляем дату
     if (daten.datum) {
         datumAnzeige.textContent = daten.datum;
         trainingSpalte.textContent = 'Training am ' + daten.datum;
@@ -76,14 +105,12 @@ onSnapshot(doc(db, 'training', 'daten'), function(snap) {
         trainingSpalte.textContent = 'Training am __.__.____';
     }
 
-    // Обновляем заметку
     if (daten.notiz !== undefined) {
         notiz.value = daten.notiz;
         notiz.style.height = 'auto';
         notiz.style.height = notiz.scrollHeight + 'px';
     }
 
-    // Обновляем игроков
     spielerAnzeigen(daten.spieler || []);
 });
 
@@ -149,34 +176,9 @@ document.getElementById('modal-spieler-abbrechen').addEventListener('click', fun
 });
 
 // ============================================
-// ЧАСТЬ 6: Ja/Nein и удаление
+// ЧАСТЬ 6: Модалы подтверждения
 // ============================================
 let ausstehende_aktion = null;
-
-window.antwortSetzen = async function(index, antwort) {
-    const text = antwort === 'ja' ? 'Anwesenheit mit Ja bestätigen?' : 'Abwesenheit mit Nein bestätigen?';
-    ausstehende_aktion = async function() {
-        const daten = await getDaten();
-        daten.spieler[index].antwort = antwort;
-        await saveDaten(daten);
-
-        const bestaetigung = document.getElementById('antwort-bestaetigung');
-        bestaetigung.style.opacity = '1';
-        setTimeout(function() { bestaetigung.style.opacity = '0'; }, 2000);
-    };
-    document.getElementById('modal-bestaetigung-text').textContent = text;
-    document.getElementById('modal-bestaetigung').style.display = 'block';
-};
-
-window.spielerLoeschen = async function(index) {
-    const daten = await getDaten();
-    ausstehende_aktion = async function() {
-        daten.spieler.splice(index, 1);
-        await saveDaten(daten);
-    };
-    document.getElementById('modal-bestaetigung-text').textContent = daten.spieler[index].name + ' wirklich löschen?';
-    document.getElementById('modal-bestaetigung').style.display = 'block';
-};
 
 document.getElementById('modal-bestaetigung-ja').addEventListener('click', async function() {
     document.getElementById('modal-bestaetigung').style.display = 'none';
