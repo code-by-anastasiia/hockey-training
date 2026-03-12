@@ -1,0 +1,123 @@
+/* Общие настройки страницы */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #333;
+}
+
+/* Поле для заметок тренера */
+#notiz {
+    width: 100%;
+    min-height: 60px;
+    height: auto;
+    border: 1px solid #1a3a6b;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 16px;
+    color: #1a3a6b;
+    font-weight: bold;
+    resize: none;
+    outline: none;
+    overflow: hidden;
+}
+
+#notiz-speichern {
+    margin-top: 8px;
+}
+
+/* Заголовок с датой */
+h2 {
+    color: #1a3a6b;
+    font-size: 22px;
+    margin: 20px 0 10px;
+}
+
+/* Поле ввода даты и кнопка */
+#datum-input {
+    padding: 6px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Все кнопки */
+button {
+    padding: 6px 14px;
+    margin-left: 8px;
+    background-color: #1a3a6b;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover {
+    background-color: #2a5298;
+}
+
+/* Таблица */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th {
+    background-color: #1a3a6b;
+    color: white;
+    padding: 10px;
+    text-align: left;
+}
+
+td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Чередование строк */
+tr:nth-child(even) {
+    background-color: #f5f5f5;
+}
+
+/* Кнопки Ja/Nein в таблице */
+.ja-btn,
+.nein-btn {
+    padding: 4px 12px;
+    margin: 2px;
+}
+
+.ja-btn.aktiv {
+    background-color: #2e7d32;
+}
+
+.nein-btn.aktiv {
+    background-color: #c62828;
+}
+
+/* Нижние кнопки */
+footer {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 600px) {
+    h2 {
+        font-size: 18px;
+    }
+
+    th,
+    td {
+        padding: 6px;
+    }
+}

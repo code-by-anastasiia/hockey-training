@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feldhockey Training</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<!-- Модал подтверждения для Ja/Nein и Spieler löschen -->
+<div id="modal-bestaetigung"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100;">
+    <div
+        style="background:white; max-width:350px; margin:150px auto; padding:30px; border-radius:8px; text-align:center;">
+        <p id="modal-bestaetigung-text" style="font-size:16px; margin-bottom:20px;"></p>
+        <button id="modal-bestaetigung-ja">Ja</button>
+        <button id="modal-bestaetigung-nein" style="background:#999;">Abbrechen</button>
+    </div>
+</div>
+
+<body>
+
+    <header>
+        <h2>Aktuelle Informationen:</h2>
+    </header>
+
+    <!-- ПОЛЕ ДЛЯ ЗАМЕТОК ТРЕНЕРА -->
+
+    <div id="notiz-bereich">
+        <textarea id="notiz" placeholder="Text..."></textarea>
+        <button id="notiz-speichern">Speichern</button>
+        <span id="speicher-bestaetigung" style="opacity:0; transition: opacity 0.5s; color: green; margin-left: 10px;">✓
+            Gespeichert</span>
+    </div>
+
+    <!-- ДАТА ТРЕНИРОВКИ -->
+    <header>
+        <h2>Nächstes Training: <span id="datum-anzeige">__.__.____</span></h2>
+        <input type="date" id="datum-input">
+        <button id="datum-speichern">Datum speichern</button>
+        <span id="datum-bestaetigung" style="opacity:0; transition: opacity 0.5s; color: green; margin-left: 10px;">✓
+            Gespeichert</span>
+    </header>
+
+    <!-- ТАБЛИЦА ИГРОКОВ -->
+    <main>
+        <table id="spieler-tabelle">
+            <thead>
+                <tr>
+                    <th>Spieler</th>
+                    <th id="training-spalte">Training am __.__.____</th>
+                </tr>
+            </thead>
+            <tbody id="spieler-liste">
+            </tbody>
+        </table>
+        <span id="antwort-bestaetigung"
+            style="opacity:0; transition: opacity 0.5s; color: green; margin-top: 10px; display: block;">✓
+            Gespeichert</span>
+    </main>
+
+    <!-- КНОПКИ -->
+    <footer>
+        <button id="spieler-hinzufuegen">+ Spieler hinzufügen</button>
+        <button id="zuruecksetzen">Zurücksetzen</button>
+    </footer>
+
+    <!-- Модал Zurücksetzen -->
+    <div id="modal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100;">
+        <div
+            style="background:white; max-width:350px; margin:150px auto; padding:30px; border-radius:8px; text-align:center;">
+            <p style="font-size:16px; margin-bottom:20px;">Alle Antworten zurücksetzen?</p>
+            <button id="modal-ja">Ja</button>
+            <button id="modal-nein" style="background:#999;">Abbrechen</button>
+        </div>
+    </div>
+
+    <!-- Модал добавления игрока -->
+    <div id="modal-spieler"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100;">
+        <div
+            style="background:white; max-width:350px; margin:150px auto; padding:30px; border-radius:8px; text-align:center;">
+            <p style="font-size:16px; margin-bottom:20px;">Name des Spielers:</p>
+            <input type="text" id="modal-spieler-input"
+                style="padding:8px; width:100%; border:1px solid #ccc; border-radius:4px; font-size:16px;">
+            <div style="margin-top:20px;">
+                <button id="modal-spieler-ok">Hinzufügen</button>
+                <button id="modal-spieler-abbrechen" style="background:#999;">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
