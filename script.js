@@ -1,4 +1,22 @@
 // ============================================
+// FIREBASE INITIALISIERUNG
+// ============================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyC7CLKiHc2IUccBS6CVRfcUISNxLNBGFq8",        // <- твои данные
+    authDomain: "hockey-training-b1458.firebaseapp.com",
+    projectId: "hockey-training-b1458",
+    storageBucket: "hockey-training-b1458.firebasestorage.app",
+    messagingSenderId: "559354946029",
+    appId: "1:559354946029:web:e472adeec221ed5f1187e4"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ============================================
 // ЧАСТЬ 1: Получаем элементы из HTML
 // ============================================
 const datumInput = document.getElementById('datum-input');
@@ -14,20 +32,18 @@ const zuruecksetzen = document.getElementById('zuruecksetzen');
 // ============================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ============================================
-function getSpieler() {
-    const data = localStorage.getItem('spieler');
-    return data ? JSON.parse(data) : [];
+async function getDaten() {
+    const snap = await getDoc(doc(db, 'training', 'daten'));
+    return snap.exists() ? snap.data() : { datum: '', notiz: '', spieler: [] };
 }
 
-function saveSpieler(spieler) {
-    localStorage.setItem('spieler', JSON.stringify(spieler));
+async function saveDaten(daten) {
+    await setDoc(doc(db, 'training', 'daten'), daten);
 }
 
-function spielerAnzeigen() {
-    const spieler = getSpieler();
+function spielerAnzeigen(spieler) {
     spielerListe.innerHTML = '';
-
-    spieler.forEach(function (s, index) {
+    spieler.forEach(function(s, index) {
         const zeile = document.createElement('tr');
         zeile.innerHTML = `
             <td>${s.name}</td>
@@ -44,109 +60,66 @@ function spielerAnzeigen() {
     });
 }
 
-// Переменная для хранения отложенного действия
-let ausstehende_aktion = null;
-
-function antwortSetzen(index, antwort) {
-    const text = antwort === 'ja' ? 'Anwesenheit mit Ja bestätigen?' : 'Abwesenheit mit Nein bestätigen?';
-    ausstehende_aktion = function () {
-        const spieler = getSpieler();
-        spieler[index].antwort = antwort;
-        saveSpieler(spieler);
-        spielerAnzeigen();
-
-        const bestaetigung = document.getElementById('antwort-bestaetigung');
-        bestaetigung.style.opacity = '1';
-        setTimeout(function () {
-            bestaetigung.style.opacity = '0';
-        }, 2000);
-    };
-    document.getElementById('modal-bestaetigung-text').textContent = text;
-    document.getElementById('modal-bestaetigung').style.display = 'block';
-}
-
-function spielerLoeschen(index) {
-    const spieler = getSpieler();
-    ausstehende_aktion = function () {
-        spieler.splice(index, 1);
-        saveSpieler(spieler);
-        spielerAnzeigen();
-    };
-    document.getElementById('modal-bestaetigung-text').textContent = spieler[index].name + ' wirklich löschen?';
-    document.getElementById('modal-bestaetigung').style.display = 'block';
-}
-
-document.getElementById('modal-bestaetigung-ja').addEventListener('click', function () {
-    document.getElementById('modal-bestaetigung').style.display = 'none';
-    if (ausstehende_aktion) {
-        ausstehende_aktion();
-        ausstehende_aktion = null;
-    }
-});
-
-document.getElementById('modal-bestaetigung-nein').addEventListener('click', function () {
-    document.getElementById('modal-bestaetigung').style.display = 'none';
-    ausstehende_aktion = null;
-});
-
 // ============================================
-// ЧАСТЬ 2: Загружаем все данные при открытии
+// ЧАСТЬ 2: Слушаем изменения в реальном времени
 // ============================================
-window.addEventListener('load', function () {
-    const gespeichertesDatum = localStorage.getItem('datum');
-    if (gespeichertesDatum) {
-        datumAnzeige.textContent = gespeichertesDatum;
-        trainingSpalte.textContent = 'Training am ' + gespeichertesDatum;
+onSnapshot(doc(db, 'training', 'daten'), function(snap) {
+    if (!snap.exists()) return;
+    const daten = snap.data();
+
+    // Обновляем дату
+    if (daten.datum) {
+        datumAnzeige.textContent = daten.datum;
+        trainingSpalte.textContent = 'Training am ' + daten.datum;
+    } else {
+        datumAnzeige.textContent = '__.__.____';
+        trainingSpalte.textContent = 'Training am __.__.____';
     }
 
-    const gespeicherteNotiz = localStorage.getItem('notiz');
-    if (gespeicherteNotiz) {
-        notiz.value = gespeicherteNotiz;
+    // Обновляем заметку
+    if (daten.notiz !== undefined) {
+        notiz.value = daten.notiz;
+        notiz.style.height = 'auto';
+        notiz.style.height = notiz.scrollHeight + 'px';
     }
 
-    notiz.style.height = 'auto';
-    notiz.style.height = notiz.scrollHeight + 'px';
-
-    spielerAnzeigen();
+    // Обновляем игроков
+    spielerAnzeigen(daten.spieler || []);
 });
 
 // ============================================
 // ЧАСТЬ 3: Сохраняем дату
 // ============================================
-datumSpeichern.addEventListener('click', function () {
+datumSpeichern.addEventListener('click', async function() {
     const datum = datumInput.value;
-    if (!datum) {
-        alert('Bitte ein Datum eingeben!');
-        return;
-    }
+    if (!datum) { alert('Bitte ein Datum eingeben!'); return; }
 
     const teile = datum.split('-');
     const formatiert = teile[2] + '.' + teile[1] + '.' + teile[0];
 
-    datumAnzeige.textContent = formatiert;
-    trainingSpalte.textContent = 'Training am ' + formatiert;
-    localStorage.setItem('datum', formatiert);
+    const daten = await getDaten();
+    daten.datum = formatiert;
+    await saveDaten(daten);
 
     const datumBestaetigung = document.getElementById('datum-bestaetigung');
     datumBestaetigung.style.opacity = '1';
-    setTimeout(function () {
-        datumBestaetigung.style.opacity = '0';
-    }, 2000);
+    setTimeout(function() { datumBestaetigung.style.opacity = '0'; }, 2000);
 });
 
 // ============================================
 // ЧАСТЬ 4: Сохраняем заметку
 // ============================================
-notizSpeichern.addEventListener('click', function () {
-    localStorage.setItem('notiz', notiz.value);
+notizSpeichern.addEventListener('click', async function() {
+    const daten = await getDaten();
+    daten.notiz = notiz.value;
+    await saveDaten(daten);
+
     const bestaetigung = document.getElementById('speicher-bestaetigung');
     bestaetigung.style.opacity = '1';
-    setTimeout(function () {
-        bestaetigung.style.opacity = '0';
-    }, 2000);
+    setTimeout(function() { bestaetigung.style.opacity = '0'; }, 2000);
 });
 
-notiz.addEventListener('input', function () {
+notiz.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = this.scrollHeight + 'px';
 });
@@ -154,50 +127,85 @@ notiz.addEventListener('input', function () {
 // ============================================
 // ЧАСТЬ 5: Добавление игрока
 // ============================================
-spielerHinzufuegen.addEventListener('click', function () {
+spielerHinzufuegen.addEventListener('click', function() {
     document.getElementById('modal-spieler').style.display = 'block';
     document.getElementById('modal-spieler-input').value = '';
     document.getElementById('modal-spieler-input').focus();
 });
 
-document.getElementById('modal-spieler-ok').addEventListener('click', function () {
+document.getElementById('modal-spieler-ok').addEventListener('click', async function() {
     const name = document.getElementById('modal-spieler-input').value.trim();
     if (!name) return;
-
     document.getElementById('modal-spieler').style.display = 'none';
 
-    const spieler = getSpieler();
-    spieler.push({ name: name, antwort: null });
-    saveSpieler(spieler);
-    spielerAnzeigen();
+    const daten = await getDaten();
+    daten.spieler = daten.spieler || [];
+    daten.spieler.push({ name: name, antwort: null });
+    await saveDaten(daten);
 });
 
-document.getElementById('modal-spieler-abbrechen').addEventListener('click', function () {
+document.getElementById('modal-spieler-abbrechen').addEventListener('click', function() {
     document.getElementById('modal-spieler').style.display = 'none';
 });
 
 // ============================================
-// ЧАСТЬ 6: Zurücksetzen
+// ЧАСТЬ 6: Ja/Nein и удаление
 // ============================================
-zuruecksetzen.addEventListener('click', function () {
+let ausstehende_aktion = null;
+
+window.antwortSetzen = async function(index, antwort) {
+    const text = antwort === 'ja' ? 'Anwesenheit mit Ja bestätigen?' : 'Abwesenheit mit Nein bestätigen?';
+    ausstehende_aktion = async function() {
+        const daten = await getDaten();
+        daten.spieler[index].antwort = antwort;
+        await saveDaten(daten);
+
+        const bestaetigung = document.getElementById('antwort-bestaetigung');
+        bestaetigung.style.opacity = '1';
+        setTimeout(function() { bestaetigung.style.opacity = '0'; }, 2000);
+    };
+    document.getElementById('modal-bestaetigung-text').textContent = text;
+    document.getElementById('modal-bestaetigung').style.display = 'block';
+};
+
+window.spielerLoeschen = async function(index) {
+    const daten = await getDaten();
+    ausstehende_aktion = async function() {
+        daten.spieler.splice(index, 1);
+        await saveDaten(daten);
+    };
+    document.getElementById('modal-bestaetigung-text').textContent = daten.spieler[index].name + ' wirklich löschen?';
+    document.getElementById('modal-bestaetigung').style.display = 'block';
+};
+
+document.getElementById('modal-bestaetigung-ja').addEventListener('click', async function() {
+    document.getElementById('modal-bestaetigung').style.display = 'none';
+    if (ausstehende_aktion) { await ausstehende_aktion(); ausstehende_aktion = null; }
+});
+
+document.getElementById('modal-bestaetigung-nein').addEventListener('click', function() {
+    document.getElementById('modal-bestaetigung').style.display = 'none';
+    ausstehende_aktion = null;
+});
+
+// ============================================
+// ЧАСТЬ 7: Zurücksetzen
+// ============================================
+zuruecksetzen.addEventListener('click', function() {
     document.getElementById('modal').style.display = 'block';
 });
 
-document.getElementById('modal-ja').addEventListener('click', function () {
+document.getElementById('modal-ja').addEventListener('click', async function() {
     document.getElementById('modal').style.display = 'none';
 
-    const spieler = getSpieler();
-    spieler.forEach(function (s) { s.antwort = null; });
-    saveSpieler(spieler);
+    const daten = await getDaten();
+    daten.spieler.forEach(function(s) { s.antwort = null; });
+    daten.datum = '';
+    await saveDaten(daten);
 
-    localStorage.removeItem('datum');
-    datumAnzeige.textContent = '++.++.++++';
-    trainingSpalte.textContent = 'Training am ++.++.++++';
     datumInput.value = '';
-
-    spielerAnzeigen();
 });
 
-document.getElementById('modal-nein').addEventListener('click', function () {
+document.getElementById('modal-nein').addEventListener('click', function() {
     document.getElementById('modal').style.display = 'none';
 });
